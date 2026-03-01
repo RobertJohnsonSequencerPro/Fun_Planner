@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block title %}Steps – {{ plan.title }} – Fun Planner{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+      <h1><i class="bi bi-list-check me-2"></i>{{ plan.title }}</h1>
+      <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
+        <span class="badge badge-category">{{ plan.category }}</span>
+
+        <!-- Inline date editor -->
+        <form method="post" action="{{ url_for('main.update_plan_date', plan_id=plan.id) }}"
+              class="d-inline-flex align-items-center gap-1">
+          <i class="bi bi-calendar-date text-muted" style="font-size:.9rem"></i>
+          <input type="date" name="scheduled_date"
+                 value="{{ plan.scheduled_date or '' }}"
+                 class="form-control form-control-sm py-0 px-2"
+                 style="width:150px;height:1.8rem;font-size:.82rem;background:#1a1a2e;border-color:#3a3a5a;color:#c0c0d8"
+                 onchange="this.form.submit()"
+                 title="Set or change the scheduled date">
+          {% if not plan.scheduled_date %}
+            <span class="text-muted" style="font-size:.78rem">← set a date</span>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 align-items-start flex-wrap justify-content-end">
+      {% if plan.scheduled_date %}
+        <a href="{{ url_for('main.export_ics', plan_id=plan.id) }}"
+           class="btn btn-outline-secondary btn-sm" title="Download for Outlook / Apple Calendar">
+          <i class="bi bi-download me-1"></i>Export .ics
+        </a>
+        {% if gcal_url %}
+          <a href="{{ gcal_url }}" target="_blank"
+             class="btn btn-sm"
+             style="background:#1a73e8;border-color:#1a73e8;color:#fff"
+             title="Add to Google Calendar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 48 48" style="margin-right:4px;vertical-align:middle">
+              <path fill="#fff" d="M44 24c0-1.1-.1-2.2-.3-3.3H24v6.3h11.3c-.5 2.6-2 4.8-4.2 6.3v5.2h6.8C41.4 34.8 44 29.8 44 24z"/>
+              <path fill="#fff" d="M24 44c5.4 0 10-1.8 13.3-4.8l-6.8-5.2c-1.7 1.1-3.9 1.8-6.5 1.8-5 0-9.2-3.4-10.7-7.9H6.3v5.4C9.6 39.8 16.3 44 24 44z"/>
+              <path fill="#fff" d="M13.3 27.9c-.4-1.1-.6-2.3-.6-3.9s.2-2.7.6-3.9v-5.4H6.3C4.8 17.5 4 20.6 4 24s.8 6.5 2.3 9.3l7-5.4z"/>
+              <path fill="#fff" d="M24 10.2c2.8 0 5.3 1 7.3 2.8l5.5-5.5C33.9 4.5 29.3 2.5 24 2.5 16.3 2.5 9.6 6.7 6.3 13.1l7 5.4C14.8 13.6 19 10.2 24 10.2z"/>
+            </svg>Google Calendar
+          </a>
+        {% endif %}
+      {% endif %}
+      <a href="{{ url_for('main.upcoming') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </a>
+    </div>
+  </div>
+</div>
+
+{% set done_count = steps | selectattr('is_done','equalto',1) | list | length %}
+{% set total = steps | length %}
+{% if total %}
+  <div class="mb-3 d-flex align-items-center gap-3">
+    <div class="flex-fill" style="max-width:400px">
+      <div class="progress" style="height:8px;background:#2a2a40">
+        {% set pct = (done_count / total * 100)|int %}
+        <div class="progress-bar" style="width:{{ pct }}%;background:var(--accent)"></div>
+      </div>
+    </div>
+    <span class="text-muted" style="font-size:.85rem">{{ done_count }}/{{ total }} complete</span>
+  </div>
+{% endif %}
+
+<div class="row g-4">
+
+  <!-- Step list -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header py-2 fw-semibold">Steps</div>
+      {% if steps %}
+        <ul class="list-group list-group-flush" id="stepList">
+          {% for s in steps %}
+            <li class="list-group-item d-flex align-items-center gap-3 step-row"
+                data-id="{{ s.id }}"
+                style="background:transparent;border-color:#2a2a40;cursor:default;
+                       {{ 'opacity:.5' if s.is_done }}">
+
+              <!-- Drag handle -->
+              <span class="drag-handle text-muted me-1"
+                    style="cursor:grab;font-size:1rem;touch-action:none"
+                    title="Drag to reorder">
+                <i class="bi bi-grip-vertical"></i>
+              </span>
+
+              <!-- Toggle -->
+              <form method="post" action="{{ url_for('main.toggle_step', step_id=s.id) }}">
+                <button type="submit" class="btn btn-sm p-0" style="width:1.5rem;height:1.5rem;line-height:1">
+                  {% if s.is_done %}
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                  {% else %}
+                    <i class="bi bi-circle text-muted"></i>
+                  {% endif %}
+                </button>
+              </form>
+
+              <!-- Description + inline due-date editor -->
+              <div class="flex-fill">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                  <span style="{{ 'text-decoration:line-through;color:#666' if s.is_done else 'color:#e0d0ff' }}">
+                    {{ s.description }}
+                  </span>
+
+                  <!-- Due date picker -->
+                  <form method="post" action="{{ url_for('main.update_step', step_id=s.id) }}"
+                        class="d-inline-flex align-items-center gap-1">
+                    <i class="bi bi-calendar2 text-muted" style="font-size:.8rem"></i>
+                    <input type="date" name="due_date"
+                           value="{{ s.due_date or '' }}"
+                           class="form-control form-control-sm py-0 px-1"
+                           style="width:140px;font-size:.78rem;height:1.6rem;background:#1a1a2e;border-color:#3a3a5a;color:#c0c0d8"
+                           onchange="this.form.submit()"
+                           title="Set or change due date">
+                    {% if s.due_date %}
+                      <button type="submit" name="due_date" value=""
+                              class="btn btn-link p-0 text-muted" style="font-size:.75rem" title="Clear due date">
+                        <i class="bi bi-x"></i>
+                      </button>
+                    {% endif %}
+                  </form>
+
+                  <!-- Per-step calendar buttons (only when due date is set) -->
+                  {% if s.due_date %}
+                    <a href="{{ url_for('main.export_step_ics', step_id=s.id) }}"
+                       class="btn py-0 px-1 btn-outline-secondary"
+                       style="font-size:.72rem;height:1.6rem;line-height:1.6rem"
+                       title="Download step as .ics">
+                      <i class="bi bi-download"></i> .ics
+                    </a>
+                    {% if step_gcal.get(s.id) %}
+                      <a href="{{ step_gcal[s.id] }}" target="_blank"
+                         class="btn py-0 px-1"
+                         style="font-size:.72rem;height:1.6rem;line-height:1.6rem;background:#1a73e8;border-color:#1a73e8;color:#fff"
+                         title="Add step to Google Calendar">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 48 48" style="vertical-align:middle;margin-right:2px">
+                          <path fill="#fff" d="M44 24c0-1.1-.1-2.2-.3-3.3H24v6.3h11.3c-.5 2.6-2 4.8-4.2 6.3v5.2h6.8C41.4 34.8 44 29.8 44 24z"/>
+                          <path fill="#fff" d="M24 44c5.4 0 10-1.8 13.3-4.8l-6.8-5.2c-1.7 1.1-3.9 1.8-6.5 1.8-5 0-9.2-3.4-10.7-7.9H6.3v5.4C9.6 39.8 16.3 44 24 44z"/>
+                          <path fill="#fff" d="M13.3 27.9c-.4-1.1-.6-2.3-.6-3.9s.2-2.7.6-3.9v-5.4H6.3C4.8 17.5 4 20.6 4 24s.8 6.5 2.3 9.3l7-5.4z"/>
+                          <path fill="#fff" d="M24 10.2c2.8 0 5.3 1 7.3 2.8l5.5-5.5C33.9 4.5 29.3 2.5 24 2.5 16.3 2.5 9.6 6.7 6.3 13.1l7 5.4C14.8 13.6 19 10.2 24 10.2z"/>
+                        </svg>GCal
+                      </a>
+                    {% endif %}
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Delete -->
+              <form method="post" action="{{ url_for('main.delete_step', step_id=s.id) }}"
+                    onsubmit="return confirm('Delete this step?')">
+                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size:.75rem">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="card-body text-muted">No steps yet — add one on the right.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Add step form -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header py-2 fw-semibold">Add a Step</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('main.steps', plan_id=plan.id) }}">
+          <div class="mb-3">
+            <label class="form-label">Description <span class="text-danger">*</span></label>
+            <input type="text" name="description" class="form-control form-control-sm"
+                   placeholder="e.g. Book a campsite" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Due date</label>
+            <input type="date" name="due_date" class="form-control form-control-sm">
+          </div>
+          <button type="submit" class="btn btn-accent btn-sm w-100">
+            <i class="bi bi-plus-lg me-1"></i>Add Step
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {% if plan.notes %}
+    <div class="card mt-3">
+      <div class="card-header py-2 fw-semibold">Plan Notes</div>
+      <div class="card-body text-muted" style="font-size:.875rem">{{ plan.notes }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const list = document.getElementById('stepList');
+  if (!list) return;
+
+  let dragging = null;
+
+  list.querySelectorAll('.drag-handle').forEach(handle => {
+    handle.addEventListener('mousedown', () => {
+      const li = handle.closest('.step-row');
+      li.setAttribute('draggable', 'true');
+      li.addEventListener('dragend', () => li.setAttribute('draggable', 'false'), { once: true });
+    });
+  });
+
+  list.addEventListener('dragstart', e => {
+    dragging = e.target.closest('.step-row');
+    if (!dragging) return;
+    setTimeout(() => dragging.style.opacity = '0.4', 0);
+  });
+
+  list.addEventListener('dragend', () => {
+    if (!dragging) return;
+    dragging.style.opacity = '';
+    dragging = null;
+    saveOrder();
+  });
+
+  list.addEventListener('dragover', e => {
+    e.preventDefault();
+    if (!dragging) return;
+    const target = e.target.closest('.step-row');
+    if (!target || target === dragging) return;
+    const after = e.clientY > target.getBoundingClientRect().top + target.getBoundingClientRect().height / 2;
+    list.insertBefore(dragging, after ? target.nextSibling : target);
+  });
+
+  function saveOrder() {
+    const ids = [...list.querySelectorAll('.step-row')].map(li => parseInt(li.dataset.id));
+    fetch('{{ url_for("main.reorder_steps", plan_id=plan.id) }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order: ids }),
+    });
+  }
+})();
+</script>
+{% endblock %}

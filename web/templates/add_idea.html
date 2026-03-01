@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Add Idea – Fun Planner{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1><i class="bi bi-plus-circle me-2"></i>Add a New Idea</h1>
+  <p>Capture a fun activity you'd like to do someday.</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-body p-4">
+        <form method="post" action="{{ url_for('main.add_idea') }}">
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control"
+                   placeholder="e.g. Kayaking at Lake Union" autofocus required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Description</label>
+            <textarea name="description" class="form-control" rows="2"
+                      placeholder="Any extra notes… (optional)"></textarea>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-sm-4">
+              <label class="form-label fw-semibold">Category</label>
+              <select name="category" class="form-select">
+                {% for c in categories %}
+                  <option value="{{ c }}" {{ 'selected' if c == 'other' }}>{{ c|title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label fw-semibold">Energy level</label>
+              <select name="energy_level" class="form-select">
+                {% for e in energy_levels %}
+                  <option value="{{ e }}" {{ 'selected' if e == 'medium' }}>{{ e|title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label fw-semibold">Cost estimate</label>
+              <select name="cost_estimate" class="form-select">
+                {% for c in cost_estimates %}
+                  <option value="{{ c }}" {{ 'selected' if c == 'cheap' }}>{{ c|title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Tags</label>
+            <input type="text" name="tags" class="form-control"
+                   placeholder="summer, weekend, outdoors  (comma-separated)">
+            <div class="form-text">Optional — used for filtering later.</div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-accent px-4">
+              <i class="bi bi-check-lg me-1"></i>Save Idea
+            </button>
+            <a href="{{ url_for('main.ideas') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

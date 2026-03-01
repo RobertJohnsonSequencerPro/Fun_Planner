@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: fun-planner
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn web_main:app
+    envVars:
+      - key: DB_PATH
+        value: /data/fun_planner.db
+    disk:
+      name: fun-planner-data
+      mountPath: /data
+      sizeGB: 1

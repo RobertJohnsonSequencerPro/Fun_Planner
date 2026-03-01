@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – Fun Planner{% endblock %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-start">
+  <div>
+    <h1><i class="bi bi-house me-2"></i>Dashboard</h1>
+    <p>Welcome back — here's what's going on.</p>
+  </div>
+  <a href="{{ url_for('main.add_idea') }}" class="btn btn-accent btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>New Idea
+  </a>
+</div>
+
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="icon" style="background:#2d1f50"><i class="bi bi-lightbulb" style="color:#c7b8f5"></i></div>
+      <div>
+        <div class="num">{{ stats.ideas or 0 }}</div>
+        <div class="lbl">Ideas in backlog</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="icon" style="background:#102040"><i class="bi bi-calendar-check" style="color:#56ccf2"></i></div>
+      <div>
+        <div class="num">{{ stats.planned or 0 }}</div>
+        <div class="lbl">Planned activities</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="icon" style="background:#0d3020"><i class="bi bi-check2-circle" style="color:#6fcf97"></i></div>
+      <div>
+        <div class="num">{{ stats.done or 0 }}</div>
+        <div class="lbl">Completed</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- Upcoming this week -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center py-2">
+        <span class="fw-semibold text-info"><i class="bi bi-calendar-week me-1"></i>Coming up this week</span>
+        <a href="{{ url_for('main.upcoming') }}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:.75rem">See all</a>
+      </div>
+      <div class="card-body p-0">
+        {% if upcoming %}
+          <ul class="list-group list-group-flush">
+            {% for p in upcoming %}
+              <li class="list-group-item d-flex justify-content-between align-items-center"
+                  style="background:transparent; border-color:#2a2a40;">
+                <span>{{ p.title }}</span>
+                <span class="badge status-planned rounded-pill">{{ p.scheduled_date }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted p-3 mb-0">Nothing scheduled for the next 7 days.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Overdue / needs review -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center py-2">
+        <span class="fw-semibold text-warning"><i class="bi bi-exclamation-circle me-1"></i>Needs review</span>
+        <a href="{{ url_for('main.review') }}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:.75rem">Go to review</a>
+      </div>
+      <div class="card-body p-0">
+        {% if overdue %}
+          <ul class="list-group list-group-flush">
+            {% for p in overdue %}
+              <li class="list-group-item d-flex justify-content-between align-items-center"
+                  style="background:transparent; border-color:#2a2a40;">
+                <span>{{ p.title }}</span>
+                <span class="badge status-skipped rounded-pill">{{ p.scheduled_date or 'TBD' }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted p-3 mb-0">All caught up — nothing overdue!</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recently done -->
+  {% if recent_done %}
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header py-2">
+        <span class="fw-semibold" style="color:#6fcf97"><i class="bi bi-trophy me-1"></i>Recently completed</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Activity</th><th>Completed</th><th>Rating</th></tr></thead>
+          <tbody>
+            {% for r in recent_done %}
+            <tr>
+              <td>{{ r.title }}</td>
+              <td class="text-muted" style="font-size:.85rem">{{ (r.completed_at or '')[:10] }}</td>
+              <td>
+                {% if r.rating %}
+                  <span class="stars">
+                    {% for i in range(1,6) %}
+                      <i class="bi bi-star{% if i <= r.rating %}-fill filled{% else %} empty{% endif %}"></i>
+                    {% endfor %}
+                  </span>
+                {% else %}&mdash;{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div><!-- /table-responsive -->
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

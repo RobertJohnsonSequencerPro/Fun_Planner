@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Surprise Me! – Fun Planner{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1><i class="bi bi-shuffle me-2"></i>Surprise Me!</h1>
+  <p>A random pick from your unplanned ideas.</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card text-center" style="border-color:var(--accent)">
+      <div class="card-body py-5">
+        <div style="font-size:3rem;color:var(--accent)" class="mb-3"><i class="bi bi-stars"></i></div>
+        <h2 class="mb-1" style="color:#e0d0ff">{{ idea.title }}</h2>
+        {% if idea.description %}
+          <p class="text-muted mb-3">{{ idea.description }}</p>
+        {% endif %}
+        <div class="d-flex justify-content-center gap-2 flex-wrap mb-4">
+          <span class="badge badge-category">{{ idea.category }}</span>
+          <span class="badge badge-energy">{{ idea.energy_level }} energy</span>
+          <span class="badge badge-cost">{{ idea.cost_estimate }}</span>
+          {% if idea.tags %}
+            {% for tag in idea.tags.split(', ') %}
+              <span class="badge" style="background:#1e1e3a;color:#a0a0e0">{{ tag }}</span>
+            {% endfor %}
+          {% endif %}
+        </div>
+        <div class="d-flex justify-content-center gap-2">
+          <a href="{{ url_for('main.plan') }}?idea_id={{ idea.id }}" class="btn btn-accent px-4">
+            <i class="bi bi-calendar-plus me-1"></i>Let's do this — plan it!
+          </a>
+          <a href="{{ url_for('main.random_idea') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-shuffle me-1"></i>Pick another
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

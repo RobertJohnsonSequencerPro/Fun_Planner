@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Upcoming Plans – Fun Planner{% endblock %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-start">
+  <div>
+    <h1><i class="bi bi-calendar-check me-2"></i>Upcoming Plans</h1>
+    <p>Everything you've scheduled, sorted by date.</p>
+  </div>
+  <a href="{{ url_for('main.plan') }}" class="btn btn-accent btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>Plan Something
+  </a>
+</div>
+
+{% if not plans %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-calendar3" style="font-size:3rem;color:#3a3a5a"></i>
+    <p class="mt-3">No upcoming plans yet.<br>
+      <a href="{{ url_for('main.plan') }}" class="btn btn-accent btn-sm mt-2">Plan your first activity</a>
+    </p>
+  </div>
+{% else %}
+  <div class="row g-3">
+    {% for p in plans %}
+      {% set pct = ((p.steps_done or 0) / (p.steps_total or 1) * 100)|int %}
+      {% set is_overdue = p.scheduled_date and p.scheduled_date < today %}
+      <div class="col-md-6 col-xl-4">
+        <div class="card h-100" style="{{ 'border-color:#4a3000' if is_overdue else '' }}">
+          <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span class="fw-semibold" style="color:#e0d0ff">{{ p.title }}</span>
+            <span class="badge badge-category">{{ p.category }}</span>
+          </div>
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <i class="bi bi-calendar-date text-muted"></i>
+              {% if p.scheduled_date %}
+                <span class="{{ 'text-warning' if is_overdue else 'text-info' }}">
+                  {{ p.scheduled_date }}
+                  {% if is_overdue %}<small>(overdue)</small>{% endif %}
+                </span>
+              {% else %}
+                <span class="text-muted">TBD</span>
+              {% endif %}
+            </div>
+
+            {% if p.steps_total %}
+              <div class="mb-1 d-flex justify-content-between" style="font-size:.8rem">
+                <span class="text-muted">Progress</span>
+                <span class="text-muted">{{ p.steps_done or 0 }}/{{ p.steps_total }} steps</span>
+              </div>
+              <div class="progress mb-3" style="height:6px;background:#2a2a40">
+                <div class="progress-bar" style="width:{{ pct }}%;background:var(--accent)"></div>
+              </div>
+            {% endif %}
+
+            {% if p.notes %}
+              <p class="text-muted mb-0" style="font-size:.83rem">{{ p.notes }}</p>
+            {% endif %}
+          </div>
+          <div class="card-footer d-flex gap-2 py-2 flex-wrap" style="background:transparent;border-color:#2a2a40">
+            <a href="{{ url_for('main.steps', plan_id=p.id) }}"
+               class="btn btn-sm btn-outline-secondary flex-fill">
+              <i class="bi bi-list-check me-1"></i>Steps
+            </a>
+            <a href="{{ url_for('main.review') }}"
+               class="btn btn-sm btn-outline-success flex-fill">
+              <i class="bi bi-clipboard-check me-1"></i>Review
+            </a>
+            {% if p.scheduled_date %}
+              <div class="w-100 d-flex gap-2 mt-1">
+                <a href="{{ url_for('main.export_ics', plan_id=p.id) }}"
+                   class="btn btn-sm btn-outline-secondary flex-fill" title="Download for Outlook / Apple Calendar">
+                  <i class="bi bi-download me-1"></i>.ics
+                </a>
+                {% if gcal_urls[p.id] %}
+                  <a href="{{ gcal_urls[p.id] }}" target="_blank"
+                     class="btn btn-sm flex-fill"
+                     style="background:#1a73e8;border-color:#1a73e8;color:#fff"
+                     title="Add to Google Calendar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 48 48" style="margin-right:4px;vertical-align:middle">
+                      <path fill="#fff" d="M44 24c0-1.1-.1-2.2-.3-3.3H24v6.3h11.3c-.5 2.6-2 4.8-4.2 6.3v5.2h6.8C41.4 34.8 44 29.8 44 24z"/>
+                      <path fill="#fff" d="M24 44c5.4 0 10-1.8 13.3-4.8l-6.8-5.2c-1.7 1.1-3.9 1.8-6.5 1.8-5 0-9.2-3.4-10.7-7.9H6.3v5.4C9.6 39.8 16.3 44 24 44z"/>
+                      <path fill="#fff" d="M13.3 27.9c-.4-1.1-.6-2.3-.6-3.9s.2-2.7.6-3.9v-5.4H6.3C4.8 17.5 4 20.6 4 24s.8 6.5 2.3 9.3l7-5.4z"/>
+                      <path fill="#fff" d="M24 10.2c2.8 0 5.3 1 7.3 2.8l5.5-5.5C33.9 4.5 29.3 2.5 24 2.5 16.3 2.5 9.6 6.7 6.3 13.1l7 5.4C14.8 13.6 19 10.2 24 10.2z"/>
+                    </svg>Google Calendar
+                  </a>
+                {% endif %}
+              </div>
+            {% else %}
+              <div class="w-100 mt-1">
+                <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Set a date on this plan to enable calendar export.</small>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% endblock %}
